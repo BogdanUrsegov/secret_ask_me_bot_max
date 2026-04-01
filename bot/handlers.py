@@ -100,7 +100,8 @@ async def cmd_profile(event: MessageCreated):
 
             "🔗 <b>Ваша текущая ссылка:</b>\n\n"
             f"https://max.ru/{event.bot.me.username}?start={user.short_hash}",
-            disable_link_preview=True
+            disable_link_preview=True,
+            parse_mode=ParseMode.HTML
     )
 
 @router.message_created(Responding.wait)
