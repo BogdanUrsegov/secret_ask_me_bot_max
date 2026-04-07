@@ -6,6 +6,7 @@ from maxapi.types import BotCommand, MessageCallback
 from maxapi.enums.parse_mode import ParseMode
 from bot.database.utils.get_global_stats import get_global_stats
 from bot.states import Sending, Responding
+from bot.utils.forward_message import forward_message
 from bot.utils.get_mess import get_mess
 from bot.utils.hashed import short_hash_str
 from bot.utils.send_main_mess import send_main_mess
@@ -15,6 +16,7 @@ from bot.database.utils.increment_user_stat import increment_user_stats
 from bot.database.utils.get_user_id_by_hash import get_user_id_by_hash
 from maxapi.context import MemoryContext
 from bot.utils.log_ch import send_to_channel
+from bot.utils.has_sticker import has_sticker
 from .keyboards import ACTION_ADD_MESS_CALL, ACTION_CANCEL_CALL, ACTION_REPLY_CALL, create_add_mess_keyboard, create_reply_keyboard, markup_cancel
 
 
@@ -23,6 +25,7 @@ ADMIN_ID = int(os.getenv("ADMIN_ID"))
 logger = logging.getLogger(__name__)
 
 router = Router()
+
 
 @router.message_created(Command('stats'))
 async def show_stats(event: MessageCreated):
@@ -154,23 +157,7 @@ async def handle_responding_message(event: MessageCreated, context: MemoryContex
     mess_id = data.get("mess_id")
     try:
         if recip_id:
-            text, attachments = await get_mess(event)
-            
-            keyboard = await create_add_mess_keyboard(user_id)
-
-            await event.bot.send_message(
-                user_id=recip_id, 
-                text=f"<b>💬 Ответ на ваше сообщение:</b>\n\n{text}", 
-                attachments=attachments + [keyboard],
-                parse_mode=ParseMode.HTML
-            )
-
-            await send_to_channel(
-                event.bot,
-                f"📩 Ответ от {user_id} к {recip_id}:\n"
-                f"{text}",
-                attachments=attachments
-            )
+            await forward_message(event, recip_id, comment="<b>💬 Ответ на ваше сообщение:</b>")
 
         await event.bot.edit_message(
                 message_id=mess_id,
@@ -216,26 +203,10 @@ async def handle_anonymous_message(event: MessageCreated, context: MemoryContext
     data = await context.get_data()
     recip_id = data.get("recip_id")
     mess_id = data.get("mess_id")
+    logger.info(event.message)
     try:
         if recip_id:
-            text, attachments = await get_mess(event)
-            
-            keyboard = await create_reply_keyboard(user_id)
-
-            await event.bot.send_message(
-                user_id=recip_id, 
-                text=f"<b>💬 У тебя новое сообщение!</b>\n\n{text}", 
-                attachments=attachments + [keyboard],
-                parse_mode=ParseMode.HTML
-            )
-
-
-            await send_to_channel(
-                event.bot,
-                f"📩 Ответ от {user_id} к {recip_id}:\n"
-                f"{text}",
-                attachments=attachments
-            )
+            await forward_message(event, recip_id, comment="<b>💬 У тебя новое сообщение!</b>")
 
             await event.message.answer(
                 "<b>Ваше сообщение отправлено!</b>",
