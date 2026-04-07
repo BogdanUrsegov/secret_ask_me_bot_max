@@ -1,4 +1,0 @@
-aiohttpx
-maxapi==0.9.17
-SQLAlchemy==2.0.48
-aiosqlite
